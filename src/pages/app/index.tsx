@@ -6,6 +6,7 @@ import {
   useFlags,
   LDProvider,
 } from "launchdarkly-react-client-sdk"
+import { useFeatureFlagEnabled, usePostHog } from "posthog-js/react"
 
 type User = { id: string; email: string; name: string }
 
@@ -39,18 +40,35 @@ const _Page: FC = () => {
   )
 
   const ld = useLDClient()
+  const ph = usePostHog()
 
   useEffect(() => {
-    console.log("identifying", user)
-    ld?.identify({
-      kind: "user",
-      email: user?.email,
-      key: user?.id,
-      name: user?.name,
-    })
+    if (user != null) {
+      ld?.identify({
+        kind: "user",
+        email: user.email,
+        key: user.id,
+        name: user.name,
+      })
+      ph.identify(user?.id, { email: user.email, name: user.name })
+    }
   }, [userId])
 
-  const { protagonistMode, monkeyPlus } = useFlags()
+  const { protagonistMode: ldProtagonistMode, monkeyPlus: ldMonkeyPlus } =
+    useFlags()
+
+  const phProtagonistMode = useFeatureFlagEnabled("protagonist-mode")
+  const phMonkeyPlus = useFeatureFlagEnabled("monkey-plus")
+
+  const protagonistMode = ldProtagonistMode || phProtagonistMode
+  const monkeyPlus = ldMonkeyPlus || phMonkeyPlus
+
+  console.log({
+    ldProtagonistMode,
+    phProtagonistMode,
+    ldMonkeyPlus,
+    phMonkeyPlus,
+  })
 
   return (
     <main
