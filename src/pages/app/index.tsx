@@ -1,11 +1,6 @@
 import { FC, useEffect, useMemo, useState } from "react"
-import { useParams, useSearchParams } from "next/navigation"
-import {
-  withLDProvider,
-  useLDClient,
-  useFlags,
-  LDProvider,
-} from "launchdarkly-react-client-sdk"
+import { useSearchParams } from "next/navigation"
+import { useLDClient, useFlags } from "launchdarkly-react-client-sdk"
 import { useFeatureFlagEnabled, usePostHog } from "posthog-js/react"
 
 type User = { id: string; email: string; name: string }
@@ -39,6 +34,10 @@ const _Page: FC = () => {
     [userId],
   )
 
+  const [provider, setProvider] = useState<"posthog" | "launchdarkly">(
+    "posthog",
+  )
+
   const ld = useLDClient()
   const ph = usePostHog()
 
@@ -60,15 +59,9 @@ const _Page: FC = () => {
   const phProtagonistMode = useFeatureFlagEnabled("protagonist-mode")
   const phMonkeyPlus = useFeatureFlagEnabled("monkey-plus")
 
-  const protagonistMode = ldProtagonistMode || phProtagonistMode
-  const monkeyPlus = ldMonkeyPlus || phMonkeyPlus
-
-  console.log({
-    ldProtagonistMode,
-    phProtagonistMode,
-    ldMonkeyPlus,
-    phMonkeyPlus,
-  })
+  const protagonistMode =
+    provider === "posthog" ? phProtagonistMode : ldProtagonistMode
+  const monkeyPlus = provider === "posthog" ? phMonkeyPlus : ldMonkeyPlus
 
   return (
     <main
